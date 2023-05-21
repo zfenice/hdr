@@ -1,0 +1,17 @@
+# Filename     exposure  1/shutter_speed f/stop gain(db) ND_filters
+church01.png    32               0.03125 8 0 0
+church02.png    16               0.0625  8 0 0
+church03.png     8               0.125   8 0 0
+church04.png     4               0.25    8 0 0
+church05.png     2               0.5     8 0 0
+church06.png     1               1       8 0 0
+church07.png     0.5             2       8 0 0
+church08.png     0.25            4       8 0 0
+church09.png     0.125           8       8 0 0
+church10.png     0.0625         16       8 0 0
+church11.png     0.03125        32       8 0 0
+church12.png     0.015625       64       8 0 0
+church13.png     0.0078125     128       8 0 0
+church14.png     0.00390625    256       8 0 0
+church15.png     0.001953125   512       8 0 0
+church16.png     0.0009765625 1024       8 0 0
