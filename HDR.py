@@ -166,8 +166,8 @@ def construct_hdr(img_list, response_curve, exposure_times):
 def tonemap(hdr):
     #amplify low irradiance more than high irradiance
     gamma = 1.3
-    r1 = 1 - np.exp(-x * gamma)     #low irradiance
-    r2 = 0.6 + 0.07 * x             #high irradiance
+    r1 = 1 - np.exp(-hdr * gamma)     #low irradiance
+    r2 = 0.6 + 0.07 * hdr             #high irradiance
     ldr = np.minimum(r1, r2)
     return np.clip(ldr * 255, 0, 255).astype('uint8')
 
