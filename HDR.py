@@ -6,51 +6,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
-# MTB implementation
-def median_threshold_bitmap_alignment(img_list):
-    median = [np.median(img) for img in img_list]
-    binary_thres_img = [cv2.threshold(img_list[i], median[i], 255, cv2.THRESH_BINARY)[1] for i in range(len(img_list))]
-    mask_img = [cv2.inRange(img_list[i], median[i]-20, median[i]+20) for i in range(len(img_list))]
- 
-    plt.imshow(mask_img[0], cmap='gray')
-    plt.show()
-    
-    max_offset = np.max(img_list[0].shape)
-    levels = 5
-
-    global_offset = []
-    for i in range(0, len(img_list)):
-        offset = [[0,0]]
-        for level in range(levels, -1, -1):
-            scaled_img = cv2.resize(binary_thres_img[i], (0, 0), fx=1/(2**level), fy=1/(2**level))
-            ground_img = cv2.resize(binary_thres_img[0], (0, 0), fx=1/(2**level), fy=1/(2**level))
-            ground_mask = cv2.resize(mask_img[0], (0, 0), fx=1/(2**level), fy=1/(2**level))
-            mask = cv2.resize(mask_img[i], (0, 0), fx=1/(2**level), fy=1/(2**level))
-            
-            level_offset = [0, 0]
-            diff = float('Inf')
-            for y in [-1, 0, 1]:
-                for x in [-1, 0, 1]:
-                    off = [offset[-1][0]*2+y, offset[-1][1]*2+x]
-                    error = 0
-                    for row in range(ground_img.shape[0]):
-                        for col in range(ground_img.shape[1]):
-                            if off[1]+col < 0 or off[0]+row < 0 or off[1]+col >= ground_img.shape[1] or off[0]+row >= ground_img.shape[1]:
-                                continue
-                            if ground_mask[row][col] == 255:
-                                continue
-                            error += 1 if ground_img[row][col] != scaled_img[y+off[0]][x+off[1]] else 0
-                    if error < diff:
-                        level_offset = off
-                        diff = error
-            offset += [level_offset]
-        global_offset += [offset[-1]]
-    return global_offset
-
-
 def hdr_debvec(img_list, exposure_times, number_of_samples_per_dimension=20):    
     B = np.log(exposure_times) #get the logarithm of exposures
-    l = 100      # l is lambda, the constant that determines the amount of smoothness
+    l = 50      # l is lambda, the constant that determines the amount of smoothness
     w = [z if z <= 0.5*255 else 255-z for z in range(256)]  #create the weighted function to emphasize the middle points
 
     #samples = []
@@ -113,8 +71,8 @@ def response_curve_solver(Z, B, l, w):
 
     # Solve the system using SVD
     x = np.linalg.lstsq(A, b)[0]
-    g = x[:256]
-    lE = x[256:]
+    g = x[:n]
+    lE = x[n:]
 
     return g, lE
 
@@ -157,19 +115,19 @@ def construct_hdr(img_list, response_curve, exposure_times):
     return hdr
 
 #not using opencv
-# def tonemap(hdr):
-#     gamma = 2
-#     tonemap = cv2.createTonemapDrago(gamma)
-#     ldr = tonemap.process(hdr)
-#     return ldr * 255
-
 def tonemap(hdr):
-    #amplify low irradiance more than high irradiance
-    gamma = 1.3
-    r1 = 1 - np.exp(-hdr * gamma)     #low irradiance
-    r2 = 0.6 + 0.07 * hdr             #high irradiance
-    ldr = np.minimum(r1, r2)
-    return np.clip(ldr * 255, 0, 255).astype('uint8')
+    gamma = 7
+    tonemap = cv2.createTonemap(gamma)
+    ldr = tonemap.process(hdr)
+    return (ldr * 255).astype('uint8')
+
+# def tonemap(hdr):
+#     #amplify low irradiance more than high irradiance
+#     gamma = 1.3
+#     r1 = 1 - np.exp(-hdr * gamma)     #low irradiance
+#     r2 = 0.6 + 0.07 * hdr             #high irradiance
+#     ldr = np.minimum(r1, r2)
+#     return np.clip(ldr * 255, 0, 255).astype('uint8')
 
 # main
 if __name__ == '__main__': 
@@ -221,16 +179,17 @@ if __name__ == '__main__':
     cv2.imwrite('hdr.png', hdr)
     print('done')
 
-    #save tonemap graph
-    print('Tonemapping.... ', end='')
-    x = np.arange(0, 6, 0.1)
-    y = tonemap(x)
-    plt.figure(figsize=(10, 10))
-    plt.plot(x, y)
-    plt.savefig('tonemapping.png')
-    print('done')
+    # #save tonemap graph
+    # print('Tonemapping.... ', end='')
+    # x = np.arange(0, 6, 0.1)
+    # y = tonemap(x)
+    # plt.figure(figsize=(10, 10))
+    # plt.plot(x, y)
+    # plt.savefig('tonemapping.png')
+    # print('done')
 
     print('Saving LDR image .... ', end='')
     ldr = tonemap(hdr)
     cv2.imwrite('ldr.png', ldr)
     print('done')
+
